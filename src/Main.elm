@@ -14,7 +14,6 @@ type alias State =
   { 
     entries : List Entry,
     field : String,
-    uid : Int,
     visibility : Visibility
   }
 
@@ -46,7 +45,6 @@ defaultState =
         }
       ],
     field = "",
-    uid = 2,
     visibility = All
   }
 
@@ -57,10 +55,17 @@ completeEntry id completed entry =
     entry
 
 addNonEmpty state = 
-  if String.isEmpty state.field then
-    state.entries
-  else
-    state.entries ++ [ newEntry state.field state.uid ]
+  let
+    maxId =
+      state.entries
+        |> List.map .id
+        |> List.maximum
+        |> Maybe.withDefault 1
+  in
+    if String.isEmpty state.field then
+      state.entries
+    else
+      state.entries ++ [ newEntry state.field (maxId + 1)]
 
 update : Msg -> State -> (State, Cmd Msg)
 update msg state = 
@@ -75,7 +80,7 @@ update msg state =
       ClearCompleted ->
         { 
           state | 
-            entries = List.filter (\entry -> not entry.completed) state.entries,
+            entries = List.filter (not << .completed) state.entries,
             visibility = All
         }
       Toggle id completed -> 
@@ -85,7 +90,6 @@ update msg state =
       Add -> 
         {
           state | 
-            uid = state.uid + 1,
             field = "",
             entries = addNonEmpty state
         }
